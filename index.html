@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Inventaire Armoire Double</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --c-bg:       #0d0d14;
+    --c-surface:  #13131f;
+    --c-panel:    #1a1a2e;
+    --c-border:   #2a2a40;
+    --c-left:     #3b82f6;
+    --c-right:    #8b5cf6;
+    --c-accent:   #f59e0b;
+    --c-text:     #e2e8f0;
+    --c-muted:    #64748b;
+    --c-success:  #10b981;
+    --c-danger:   #ef4444;
+    --tap-min:    44px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    touch-action: manipulation;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: #0d0d14;
+    border-bottom: 1px solid var(--c-border);
+    padding: 0.75rem 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .logo-badge { display: flex; align-items: center; gap: 0.6rem; }
+
+  .logo-icon {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--c-left), var(--c-right));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .app-title { font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; }
+  .app-sub   { font-size: 0.65rem; color: var(--c-muted); font-family: 'JetBrains Mono', monospace; }
+
+  .status-bar {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--c-muted);
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--c-muted); flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-dot.saved  { background: var(--c-success); box-shadow: 0 0 6px var(--c-success); }
+  .status-dot.saving { background: var(--c-accent); animation: pulse 1s infinite; }
+  .status-dot.error  { background: var(--c-danger); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── CONFIG BANNER ── */
+  .config-banner {
+    background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+    border: 1px solid rgba(245,158,11,0.4);
+    border-radius: 10px;
+    margin: 0.75rem 1rem;
+    padding: 0.75rem 1rem;
+    display: flex; align-items: flex-start; gap: 0.75rem;
+  }
+  .config-banner.hidden { display: none; }
+  .config-banner-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 1px; }
+  .config-banner-body { flex: 1; }
+  .config-banner-title { font-size: 0.82rem; font-weight: 700; color: var(--c-accent); margin-bottom: 0.3rem; }
+  .config-banner-text  { font-size: 0.75rem; color: var(--c-muted); line-height: 1.5; }
+  .config-url-row { display: flex; gap: 0.5rem; margin-top: 0.6rem; align-items: center; }
+  .config-url-input {
+    flex: 1; height: 36px; padding: 0 0.75rem;
+    background: var(--c-bg); border: 1px solid var(--c-border);
+    border-radius: 6px; color: var(--c-text);
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    outline: none;
+  }
+  .config-url-input:focus { border-color: var(--c-accent); }
+  .config-url-input::placeholder { color: var(--c-muted); }
+  .btn-config-save {
+    height: 36px; padding: 0 0.9rem;
+    background: var(--c-accent); color: #000;
+    border: none; border-radius: 6px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.78rem;
+    white-space: nowrap; flex-shrink: 0;
+  }
+
+  /* ── SEARCH BAR ── */
+  .search-bar {
+    padding: 0.6rem 1rem;
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    height: var(--tap-min);
+    padding: 0 0.9rem 0 2.5rem;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    color: var(--c-text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--c-left); }
+  .search-input::placeholder { color: var(--c-muted); }
+
+  .search-icon {
+    position: absolute; left: 1.85rem; top: 50%; transform: translateY(-50%);
+    color: var(--c-muted); font-size: 1rem; pointer-events: none;
+  }
+
+  #searchResults {
+    display: none;
+    margin-top: 0.5rem;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    overflow: hidden;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  /* ── TABS (mobile) ── */
+  .tab-bar {
+    display: flex;
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    position: sticky; top: 57px; z-index: 90;
+  }
+
+  .tab-btn {
+    flex: 1;
+    height: var(--tap-min);
+    border: none; background: transparent;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
+    color: var(--c-muted); cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  }
+  .tab-btn.active-left  { color: var(--c-left);  border-bottom-color: var(--c-left); }
+  .tab-btn.active-right { color: var(--c-right); border-bottom-color: var(--c-right); }
+
+  /* ── ACTION BAR (sous les tabs) ── */
+  .action-bar {
+    padding: 0.6rem 1rem;
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-border);
+    display: flex; gap: 0.5rem; align-items: center;
+  }
+
+  .btn-add-section {
+    flex: 1;
+    height: var(--tap-min);
+    border-radius: 8px; border: 1px dashed var(--c-border);
+    background: transparent; color: var(--c-muted);
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.8rem;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+  }
+  .btn-add-section:active { background: var(--c-panel); }
+
+  .btn-icon {
+    width: var(--tap-min); height: var(--tap-min); flex-shrink: 0;
+    border-radius: 8px; border: 1px solid var(--c-border);
+    background: var(--c-panel); color: var(--c-text);
+    font-size: 1.1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .btn-icon:active { background: var(--c-border); }
+
+  /* ── MAIN ── */
+  .armoire-panel {
+    display: none;
+    padding: 1rem;
+    min-height: calc(100vh - 200px);
+  }
+  .armoire-panel.visible { display: block; }
+
+  /* ── ARMOIRE HEADER ── */
+  .armoire-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem; padding-bottom: 0.75rem;
+    border-bottom: 2px solid;
+  }
+  .armoire-gauche .armoire-header { border-color: var(--c-left); }
+  .armoire-droite .armoire-header { border-color: var(--c-right); }
+
+  .armoire-label-input {
+    background: transparent; border: none; outline: none;
+    font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+    color: var(--c-text); cursor: pointer; min-width: 0; flex: 1;
+    height: var(--tap-min);
+  }
+  .armoire-label-input:focus {
+    background: var(--c-panel); padding: 2px 8px; border-radius: 6px;
+    border: 1px solid var(--c-border);
+  }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0 0.85rem;
+    min-height: var(--tap-min);
+    cursor: pointer; user-select: none;
+    background: var(--c-panel);
+  }
+
+  .section-type-badge {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em;
+    padding: 3px 7px; border-radius: 4px; text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace; flex-shrink: 0;
+  }
+  .badge-etagere { background: rgba(59,130,246,0.2); color: var(--c-left); }
+  .badge-tiroir  { background: rgba(139,92,246,0.2); color: var(--c-right); }
+
+  .section-label-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.9rem;
+    color: var(--c-text); min-width: 0;
+    height: var(--tap-min);
+  }
+  .section-label-input:focus {
+    background: var(--c-bg); padding: 2px 6px; border-radius: 4px;
+  }
+
+  .section-del-btn {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border: none; background: transparent;
+    color: var(--c-danger); font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    opacity: 0.6;
+  }
+  .section-del-btn:active { background: rgba(239,68,68,0.15); opacity: 1; }
+
+  .section-toggle {
+    color: var(--c-muted); font-size: 0.75rem;
+    transition: transform 0.2s; flex-shrink: 0;
+  }
+  .section-toggle.open { transform: rotate(90deg); }
+
+  .section-body { padding: 0.75rem; display: none; }
+  .section-body.open { display: block; }
+
+  /* ── CONTENANT ── */
+  .contenant-card {
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    margin-bottom: 0.6rem;
+    overflow: hidden;
+  }
+
+  .contenant-header {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0 0.75rem;
+    min-height: 48px;
+    background: rgba(255,255,255,0.025);
+    cursor: pointer;
+  }
+
+  .contenant-icon { font-size: 1rem; flex-shrink: 0; }
+
+  .contenant-label-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.85rem;
+    color: var(--c-text); min-width: 0;
+    height: 48px;
+  }
+  .contenant-label-input:focus {
+    background: var(--c-panel); padding: 2px 6px; border-radius: 4px;
+  }
+
+  .contenant-del-btn {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border: none; background: transparent;
+    color: var(--c-muted); font-size: 0.9rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+  }
+  .contenant-del-btn:active { color: var(--c-danger); background: rgba(239,68,68,0.1); }
+
+  .contenant-body { padding: 0.6rem; display: none; }
+  .contenant-body.open { display: block; }
+
+  /* ── OBJET ── */
+  .objet-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    margin-bottom: 0.4rem;
+  }
+
+  .objet-nom-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    font-family: 'Syne', sans-serif; font-size: 0.875rem; color: var(--c-text);
+    min-width: 0;
+    height: var(--tap-min);
+  }
+  .objet-nom-input::placeholder { color: var(--c-muted); }
+
+  .objet-ref-input {
+    width: 70px; background: transparent; border: none; outline: none;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    color: var(--c-muted); text-align: right;
+    height: var(--tap-min);
+  }
+  .objet-ref-input::placeholder { color: #334155; }
+  .objet-ref-input:focus { color: var(--c-text); }
+
+  /* ── QTY CONTROL ── */
+  .qty-control {
+    display: flex; align-items: center;
+    border: 1px solid var(--c-border);
+    border-radius: 8px; overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .qty-btn {
+    width: var(--tap-min); height: var(--tap-min);
+    border: none; cursor: pointer;
+    background: var(--c-panel); color: var(--c-text);
+    font-size: 1.2rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s;
+    flex-shrink: 0;
+  }
+  .qty-btn:active { background: var(--c-border); }
+
+  .qty-value {
+    width: 40px; text-align: center;
+    background: var(--c-bg);
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+    color: var(--c-text); border: none; outline: none;
+    height: var(--tap-min);
+    -moz-appearance: textfield;
+  }
+  .qty-value::-webkit-inner-spin-button,
+  .qty-value::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .objet-del-btn {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border: none; background: transparent;
+    color: var(--c-muted); font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+  }
+  .objet-del-btn:active { color: var(--c-danger); background: rgba(239,68,68,0.1); }
+
+  /* ── ADD BUTTONS ── */
+  .add-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; }
+
+  .btn-add-inline {
+    flex: 1;
+    min-height: var(--tap-min);
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;
+    padding: 0.3rem 0.6rem; border-radius: 8px;
+    border: 1px dashed var(--c-border); background: transparent;
+    color: var(--c-muted); cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 600;
+    transition: all 0.15s;
+  }
+  .btn-add-inline:active { background: var(--c-panel); color: var(--c-text); }
+  .btn-add-inline.left:active  { border-color: var(--c-left); color: var(--c-left); }
+  .btn-add-inline.right:active { border-color: var(--c-right); color: var(--c-right); }
+
+  /* ── BOTTOM TOOLBAR ── */
+  .bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+    background: var(--c-surface);
+    border-top: 1px solid var(--c-border);
+    padding: 0.5rem 1rem;
+    display: flex; gap: 0.5rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+
+  .bottom-bar .btn {
+    flex: 1; height: var(--tap-min);
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+    border-radius: 10px; border: none; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem;
+  }
+  .btn-save  { background: var(--c-panel); color: var(--c-text); border: 1px solid var(--c-border); }
+  .btn-save:active  { background: var(--c-border); }
+  .btn-fiche { background: var(--c-accent); color: #000; }
+  .btn-fiche:active { filter: brightness(0.9); }
+
+  .bottom-spacer { height: calc(68px + env(safe-area-inset-bottom)); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center; padding: 2.5rem 1rem; color: var(--c-muted);
+    font-size: 0.85rem;
+  }
+  .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+  /* ── LOADING ── */
+  .loading-overlay {
+    position: fixed; inset: 0; z-index: 9998;
+    background: var(--c-bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1rem;
+  }
+  .loading-overlay.hidden { display: none; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--c-border); border-top-color: var(--c-left);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 1rem; right: 1rem;
+    z-index: 9999; padding: 0.8rem 1rem; border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    display: flex; align-items: center; gap: 0.5rem;
+    transform: translateY(20px); opacity: 0;
+    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-success { background: var(--c-success); color: #fff; }
+  .toast-error   { background: var(--c-danger); color: #fff; }
+  .toast-info    { background: var(--c-accent); color: #000; }
+
+  /* ── MODAL 5S ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(0,0,0,0.85);
+    display: flex; align-items: flex-end; justify-content: center;
+    overflow-y: auto;
+  }
+  .modal-overlay.hidden { display: none; }
+
+  .modal-box {
+    background: #fff; color: #111;
+    width: 100%; max-width: 820px;
+    border-radius: 16px 16px 0 0; padding: 1.5rem 1.25rem;
+    font-family: 'Syne', sans-serif;
+    max-height: 90vh; overflow-y: auto;
+  }
+
+  /* ── FICHE 5S ── */
+  .fiche-5s h1 {
+    font-size: 1.3rem; font-weight: 800; text-align: center;
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.25rem;
+  }
+  .fiche-5s .fiche-sub {
+    text-align: center; font-size: 0.72rem; color: #666; margin-bottom: 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .fiche-5s table {
+    width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.78rem;
+  }
+  .fiche-5s th {
+    background: #111; color: #fff; padding: 6px 8px; text-align: left;
+    font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .fiche-5s td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
+  .fiche-5s tr:nth-child(even) td { background: #f9fafb; }
+  .fiche-5s .qty-cell { font-family: 'JetBrains Mono', monospace; text-align: center; }
+  .fiche-5s .ref-cell { font-family: 'JetBrains Mono', monospace; color: #6b7280; font-size: 0.65rem; }
+  .fiche-arm-header {
+    font-size: 0.82rem; font-weight: 800; padding: 7px 10px;
+    letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0;
+  }
+  .fiche-5s-checklist { margin-top: 1.25rem; padding-top: 1rem; border-top: 2px solid #111; }
+  .fiche-5s-checklist h2 {
+    font-size: 0.82rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 0.75rem;
+  }
+  .checklist-grid { display: grid; grid-template-columns: 1fr; gap: 0.4rem; }
+  .checklist-item {
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    font-size: 0.75rem; padding: 7px 8px;
+    border: 1px solid #e5e7eb; border-radius: 6px;
+  }
+  .check-box {
+    width: 16px; height: 16px; border: 1.5px solid #999; border-radius: 3px;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  /* ── CONFIRM DIALOG ── */
+  .confirm-overlay {
+    position: fixed; inset: 0; z-index: 9990;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .confirm-overlay.hidden { display: none; }
+  .confirm-box {
+    background: var(--c-surface); border: 1px solid var(--c-border);
+    border-radius: 16px 16px 0 0; padding: 1.5rem 1.25rem;
+    width: 100%; max-width: 480px;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+  .confirm-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .confirm-msg   { font-size: 0.85rem; color: var(--c-muted); margin-bottom: 1.25rem; }
+  .confirm-btns  { display: flex; gap: 0.75rem; }
+  .confirm-btns button {
+    flex: 1; height: var(--tap-min);
+    border: none; border-radius: 10px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem;
+  }
+  .confirm-cancel { background: var(--c-panel); color: var(--c-text); border: 1px solid var(--c-border) !important; }
+  .confirm-ok     { background: var(--c-danger); color: #fff; }
+
+  /* ── DESKTOP (≥ 768px) ── */
+  @media (min-width: 768px) {
+    .tab-bar { display: none; }
+    .action-bar { display: none; }
+    .bottom-bar { display: none; }
+    .bottom-spacer { display: none; }
+
+    .desktop-toolbar {
+      display: flex !important;
+      padding: 0.75rem 1.5rem;
+      align-items: center; gap: 0.75rem; flex-wrap: wrap;
+      background: var(--c-surface);
+      border-bottom: 1px solid var(--c-border);
+    }
+
+    .armoire-panel { display: block !important; }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 120px);
+    }
+    .armoire-panel {
+      padding: 1.25rem;
+      border-right: 1px solid var(--c-border);
+    }
+    .armoire-panel:last-child { border-right: none; }
+
+    .checklist-grid { grid-template-columns: 1fr 1fr; }
+
+    .modal-box {
+      border-radius: 12px;
+      margin: 2rem 1rem;
+      max-height: calc(100vh - 4rem);
+    }
+    .modal-overlay { align-items: center; }
+  }
+
+  .desktop-toolbar { display: none; }
+
+  .btn-desktop {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.45rem 0.9rem; height: 36px;
+    border-radius: 6px; border: none; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.78rem;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-primary   { background: var(--c-left);   color: #fff; }
+  .btn-secondary { background: var(--c-right);  color: #fff; }
+  .btn-accent    { background: var(--c-accent);  color: #000; }
+  .btn-ghost     { background: transparent; color: var(--c-muted); border: 1px solid var(--c-border); }
+
+  @media print {
+    .modal-overlay { position: static; background: none; padding: 0; }
+    .modal-box { border-radius: 0; padding: 1rem; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div style="font-size:0.8rem;color:var(--c-muted);font-family:'JetBrains Mono',monospace">Chargement…</div>
+</div>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="logo-badge">
+    <div class="logo-icon">🗄️</div>
+    <div>
+      <div class="app-title">Inventaire Armoire</div>
+      <div class="app-sub" id="appSub">Gestion de stock</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.5rem">
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Init…</span>
+    </div>
+    <button onclick="openConfig()" title="Modifier l'URL Apps Script"
+      style="width:32px;height:32px;border-radius:6px;border:1px solid var(--c-border);background:var(--c-panel);color:var(--c-muted);font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">⚙️</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  BANDEAU DE CONFIGURATION (disparaît une fois l'URL saisie) -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="config-banner" id="configBanner">
+  <div class="config-banner-icon">⚙️</div>
+  <div class="config-banner-body">
+    <div class="config-banner-title">Configuration requise</div>
+    <div class="config-banner-text">
+      Colle l'URL de ton Google Apps Script déployé en <strong>Web App</strong>.<br>
+      Elle sera mémorisée dans ton navigateur.
+    </div>
+    <div class="config-url-row">
+      <input class="config-url-input" id="gasUrlInput"
+             placeholder="https://script.google.com/macros/s/…/exec" />
+      <button class="btn-config-save" onclick="saveGasUrl()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- DESKTOP TOOLBAR -->
+<div class="desktop-toolbar" id="desktopToolbar">
+  <input id="searchInputDesktop" type="text" placeholder="🔍 Rechercher…"
+       oninput="searchObjects('desktop')"
+       style="padding:0.4rem 0.7rem;height:36px;border-radius:6px;background:var(--c-panel);border:1px solid var(--c-border);color:var(--c-text);width:220px;font-family:'Syne',sans-serif;outline:none"/>
+  <button class="btn-desktop btn-primary" onclick="addSection('gauche','etagere')">➕ Étagère G.</button>
+  <button class="btn-desktop btn-primary" onclick="addSection('gauche','tiroir')">➕ Tiroir G.</button>
+  <button class="btn-desktop btn-secondary" onclick="addSection('droite','etagere')">➕ Étagère D.</button>
+  <button class="btn-desktop btn-secondary" onclick="addSection('droite','tiroir')">➕ Tiroir D.</button>
+  <div style="flex:1"></div>
+  <button class="btn-desktop btn-ghost" onclick="manualSave()">💾 Sauvegarder</button>
+  <button class="btn-desktop btn-accent" onclick="openFiche5S()">📋 Fiche 5S</button>
+</div>
+<div id="searchResultsDesktop" style="display:none;padding:0.75rem 1.5rem;background:var(--c-surface);border-bottom:1px solid var(--c-border)"></div>
+
+<!-- SEARCH (mobile) -->
+<div class="search-bar" id="mobileSearchBar">
+  <span class="search-icon">🔍</span>
+  <input class="search-input" id="searchInputMobile" type="search" placeholder="Rechercher un objet…"
+         oninput="searchObjects('mobile')" autocomplete="off"/>
+  <div id="searchResults"></div>
+</div>
+
+<!-- TABS (mobile) -->
+<div class="tab-bar" id="tabBar">
+  <button class="tab-btn active-left" id="tabGauche" onclick="switchTab('gauche')">
+    <span style="width:8px;height:8px;border-radius:50%;background:var(--c-left);flex-shrink:0"></span>
+    <span id="tabLabelGauche">Armoire G.</span>
+    <span id="tabStatsGauche" style="font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--c-muted)">0</span>
+  </button>
+  <button class="tab-btn" id="tabDroite" onclick="switchTab('droite')">
+    <span style="width:8px;height:8px;border-radius:50%;background:var(--c-right);flex-shrink:0"></span>
+    <span id="tabLabelDroite">Armoire D.</span>
+    <span id="tabStatsDroite" style="font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--c-muted)">0</span>
+  </button>
+</div>
+
+<!-- ACTION BAR (mobile) -->
+<div class="action-bar" id="actionBar">
+  <button class="btn-add-section" id="btnAddEtagere" onclick="addSectionCurrent('etagere')">
+    ➕ Étagère
+  </button>
+  <button class="btn-add-section" id="btnAddTiroir" onclick="addSectionCurrent('tiroir')">
+    ➕ Tiroir
+  </button>
+  <button class="btn-icon" onclick="openFiche5S()" title="Fiche 5S">📋</button>
+  <button class="btn-icon" onclick="manualSave()" title="Sauvegarder">💾</button>
+</div>
+
+<!-- MAIN GRID (desktop) / PANELS (mobile) -->
+<div class="main-grid" id="mainGrid">
+
+  <div class="armoire-panel armoire-gauche visible" id="panelGauche">
+    <div class="armoire-header">
+      <input type="text" class="armoire-label-input" id="labelGauche"
+             value="Armoire Gauche" onchange="onArmLabelChange()" style="color:var(--c-left)"/>
+      <span style="font-size:0.7rem;color:var(--c-muted);font-family:'JetBrains Mono',monospace" id="statsGauche">0 obj.</span>
+    </div>
+    <div id="sectionsGauche"></div>
+    <div class="empty-state" id="emptyGauche">
+      <div class="empty-icon">📦</div>
+      <div>Aucune section<br>Ajoutez une étagère ou un tiroir</div>
+    </div>
+  </div>
+
+  <div class="armoire-panel armoire-droite" id="panelDroite">
+    <div class="armoire-header">
+      <input type="text" class="armoire-label-input" id="labelDroite"
+             value="Armoire Droite" onchange="onArmLabelChange()" style="color:var(--c-right)"/>
+      <span style="font-size:0.7rem;color:var(--c-muted);font-family:'JetBrains Mono',monospace" id="statsDroite">0 obj.</span>
+    </div>
+    <div id="sectionsDroite"></div>
+    <div class="empty-state" id="emptyDroite">
+      <div class="empty-icon">📦</div>
+      <div>Aucune section<br>Ajoutez une étagère ou un tiroir</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-spacer"></div>
+
+<!-- BOTTOM BAR (mobile) -->
+<div class="bottom-bar">
+  <button class="btn btn-save" onclick="manualSave()">💾 Sauvegarder</button>
+  <button class="btn btn-fiche" onclick="openFiche5S()">📋 Fiche 5S</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay hidden" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirmTitle">Confirmer</div>
+    <div class="confirm-msg" id="confirmMsg">Êtes-vous sûr ?</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="confirmResolve(false)">Annuler</button>
+      <button class="confirm-ok" onclick="confirmResolve(true)">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FICHE 5S -->
+<div class="modal-overlay hidden" id="modal5S">
+  <div class="modal-box fiche-5s" id="ficheContent"></div>
+</div>
+
+<script>
+// ============================================================
+//  CONFIG — URL Google Apps Script
+//  Stockée dans localStorage pour ne la saisir qu'une fois.
+// ============================================================
+const LS_URL_KEY = 'gas_url_inventaire';
+
+let GAS_URL = localStorage.getItem(LS_URL_KEY) || '';
+
+function saveGasUrl() {
+  const val = document.getElementById('gasUrlInput').value.trim();
+  if (!val.startsWith('https://script.google.com')) {
+    showToast('URL invalide — elle doit commencer par https://script.google.com', 'error');
+    return;
+  }
+  GAS_URL = val;
+  localStorage.setItem(LS_URL_KEY, GAS_URL);
+  document.getElementById('configBanner').classList.add('hidden');
+  showToast('URL enregistrée ✓', 'success');
+  initApp();
+}
+
+// Ouvre le bandeau config pour modifier l'URL (pré-rempli avec la valeur actuelle)
+function openConfig() {
+  document.getElementById('gasUrlInput').value = GAS_URL || '';
+  document.getElementById('configBanner').classList.remove('hidden');
+  setTimeout(() => document.getElementById('gasUrlInput').focus(), 50);
+}
+
+function checkConfig() {
+  if (GAS_URL) {
+    document.getElementById('configBanner').classList.add('hidden');
+  } else {
+    document.getElementById('configBanner').classList.remove('hidden');
+  }
+}
+
+// ============================================================
+//  STATE
+// ============================================================
+let STATE = {
+  meta: { version: "1.0", createdAt: new Date().toISOString(), title: "Inventaire" },
+  armoires: {
+    gauche: { label: "Armoire Gauche", couleur: "#3b82f6", sections: [] },
+    droite: { label: "Armoire Droite", couleur: "#8b5cf6", sections: [] }
+  }
+};
+
+let saveTimer  = null;
+let isSaving   = false;
+let lastSaveTs = null;
+let currentTab = 'gauche';
+
+// ============================================================
+//  CONFIRM (remplace window.confirm)
+// ============================================================
+let confirmResolve = null;
+
+function mobileConfirm(msg) {
+  return new Promise(resolve => {
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+    confirmResolve = (val) => {
+      document.getElementById('confirmOverlay').classList.add('hidden');
+      resolve(val);
+    };
+  });
+}
+
+// ============================================================
+//  TABS (mobile)
+// ============================================================
+function switchTab(side) {
+  currentTab = side;
+  document.getElementById('panelGauche').classList.toggle('visible', side === 'gauche');
+  document.getElementById('panelDroite').classList.toggle('visible', side === 'droite');
+  document.getElementById('tabGauche').className = 'tab-btn' + (side === 'gauche' ? ' active-left' : '');
+  document.getElementById('tabDroite').className = 'tab-btn' + (side === 'droite' ? ' active-right' : '');
+  updateActionBarColor();
+}
+
+function updateActionBarColor() {
+  const btns = document.querySelectorAll('.btn-add-section');
+  btns.forEach(b => {
+    b.style.borderColor = currentTab === 'gauche' ? 'var(--c-left)' : 'var(--c-right)';
+    b.style.color = currentTab === 'gauche' ? 'var(--c-left)' : 'var(--c-right)';
+  });
+}
+
+function addSectionCurrent(type) {
+  addSection(currentTab, type);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  updateActionBarColor();
+  checkConfig();
+  if (GAS_URL) {
+    initApp();
+  } else {
+    // Pas d'URL configurée : on démarre quand même en mode local
+    renderAll();
+    setStatus('saved');
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  }
+});
+
+async function initApp() {
+  setStatus('init');
+  try {
+    const res = await gasCall('loadData', {});
+    if (res && res.success) {
+      try { STATE = JSON.parse(res.data); lastSaveTs = res.timestamp; } catch(e) {}
+    }
+  } catch(e) {
+    showToast('Erreur chargement : ' + e.message, 'error');
+    setStatus('error');
+  }
+  renderAll();
+  setStatus('saved');
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// ============================================================
+//  APPEL GOOGLE APPS SCRIPT via fetch
+//  - loadData  → GET  (petite requête, pas de problème de taille)
+//  - saveData  → POST text/plain (évite la limite de taille d'URL et
+//                le preflight CORS qui bloque les requêtes cross-origin)
+// ============================================================
+async function gasCall(action, payload) {
+  if (!GAS_URL) throw new Error('URL Apps Script non configurée');
+
+  if (action === 'saveData') {
+    // POST : le JSON complet dans le body, pas dans l'URL
+    const body = JSON.stringify({ action, data: payload.data });
+    const resp = await fetch(GAS_URL, {
+      method : 'POST',
+      redirect: 'follow',
+      headers : { 'Content-Type': 'text/plain;charset=utf-8' },
+      body
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return resp.json();
+  }
+
+  // GET pour loadData et autres (petites requêtes)
+  const url = new URL(GAS_URL);
+  url.searchParams.set('action', action);
+  if (payload && Object.keys(payload).length > 0) {
+    url.searchParams.set('payload', JSON.stringify(payload));
+  }
+  const resp = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.json();
+}
+
+// ============================================================
+//  RENDER
+// ============================================================
+function renderAll() {
+  document.getElementById('labelGauche').value = STATE.armoires.gauche.label || 'Armoire Gauche';
+  document.getElementById('labelDroite').value = STATE.armoires.droite.label || 'Armoire Droite';
+  renderArmoire('gauche');
+  renderArmoire('droite');
+  updateStats();
+}
+
+function renderArmoire(side) {
+  const container = document.getElementById('sections' + cap(side));
+  const empty     = document.getElementById('empty' + cap(side));
+  const sections  = STATE.armoires[side].sections || [];
+
+  container.innerHTML = '';
+  empty.style.display = sections.length === 0 ? 'block' : 'none';
+
+  sections.forEach((sec, si) => {
+    container.appendChild(buildSection(side, sec, si));
+  });
+}
+
+function buildSection(side, sec, si) {
+  const card = document.createElement('div');
+  card.className = 'section-card';
+
+  const badgeClass = sec.type === 'etagere' ? 'badge-etagere' : 'badge-tiroir';
+  const badgeLabel = sec.type === 'etagere' ? 'Étagère' : 'Tiroir';
+  const icon       = sec.type === 'etagere' ? '📚' : '🗄️';
+
+  const header = document.createElement('div');
+  header.className = 'section-header';
+  header.innerHTML = `
+    <span class="section-toggle ${sec.open !== false ? 'open' : ''}">▶</span>
+    <span class="section-type-badge ${badgeClass}">${icon} ${badgeLabel}</span>
+    <input class="section-label-input" value="${esc(sec.label)}"
+           onchange="updateSectionLabel(event,'${side}',${si})"
+           onclick="event.stopPropagation()" />
+    <button class="section-del-btn no-print"
+            onclick="event.stopPropagation();deleteSectionAsync('${side}',${si})">🗑</button>`;
+
+  const body = document.createElement('div');
+  body.className = 'section-body' + (sec.open !== false ? ' open' : '');
+
+  header.addEventListener('click', () => {
+    sec.open = sec.open === false ? true : false;
+    header.querySelector('.section-toggle').classList.toggle('open', sec.open !== false);
+    body.classList.toggle('open', sec.open !== false);
+  });
+
+  (sec.contenants || []).forEach((cont, ci) => {
+    body.appendChild(buildContenant(side, sec, si, cont, ci));
+  });
+
+  const addRow = document.createElement('div');
+  addRow.className = 'add-row';
+  addRow.innerHTML = `
+    <button class="btn-add-inline ${side}" onclick="addContenant('${side}',${si})">
+      ➕ Ajouter contenant
+    </button>`;
+  body.appendChild(addRow);
+
+  card.appendChild(header);
+  card.appendChild(body);
+  return card;
+}
+
+function buildContenant(side, sec, si, cont, ci) {
+  const wrap = document.createElement('div');
+  wrap.className = 'contenant-card';
+
+  const icon = sec.type === 'etagere' ? '📦' : '🗂️';
+
+  const header = document.createElement('div');
+  header.className = 'contenant-header';
+  header.innerHTML = `
+    <span class="contenant-icon">${icon}</span>
+    <input class="contenant-label-input" value="${esc(cont.label)}"
+           onchange="updateContenantLabel(event,'${side}',${si},${ci})"
+           onclick="event.stopPropagation()" />
+    <span class="section-toggle ${cont.open !== false ? 'open' : ''}" style="margin-right:4px">▶</span>
+    <button class="contenant-del-btn no-print"
+            onclick="event.stopPropagation();deleteContenantAsync('${side}',${si},${ci})">✕</button>`;
+
+  const body = document.createElement('div');
+  body.className = 'contenant-body' + (cont.open !== false ? ' open' : '');
+
+  header.addEventListener('click', () => {
+    cont.open = cont.open === false ? true : false;
+    header.querySelector('.section-toggle').classList.toggle('open', cont.open !== false);
+    body.classList.toggle('open', cont.open !== false);
+  });
+
+  (cont.objets || []).forEach((obj, oi) =>
+    body.appendChild(buildObjet(side, si, ci, obj, oi)));
+
+  const addBtn = document.createElement('button');
+  addBtn.className = `btn-add-inline ${side}`;
+  addBtn.innerHTML = '➕ Ajouter objet';
+  addBtn.onclick = () => addObjet(side, si, ci);
+  body.appendChild(addBtn);
+
+  wrap.appendChild(header);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function buildObjet(side, si, ci, obj, oi) {
+  const row = document.createElement('div');
+  row.className = 'objet-row';
+  row.innerHTML = `
+    <input class="objet-nom-input" placeholder="Nom de l'objet…"
+           value="${esc(obj.nom)}"
+           onchange="updateObjet(event,'${side}',${si},${ci},${oi},'nom')" />
+    <div class="qty-control">
+      <button class="qty-btn" onclick="changeQty('${side}',${si},${ci},${oi},-1)">−</button>
+      <input class="qty-value" type="number" min="0" value="${obj.quantite||0}"
+             onchange="updateObjet(event,'${side}',${si},${ci},${oi},'quantite')" />
+      <button class="qty-btn" onclick="changeQty('${side}',${si},${ci},${oi},1)">+</button>
+    </div>
+    <input class="objet-ref-input" placeholder="Réf." value="${esc(obj.reference||'')}"
+           onchange="updateObjet(event,'${side}',${si},${ci},${oi},'reference')" />
+    <button class="objet-del-btn no-print"
+            onclick="deleteObjetAsync('${side}',${si},${ci},${oi})" title="Supprimer">✕</button>`;
+  return row;
+}
+
+// ============================================================
+//  ACTIONS — SECTIONS
+// ============================================================
+function addSection(side, type) {
+  const label = type === 'etagere'
+    ? `Étagère ${STATE.armoires[side].sections.filter(s=>s.type==='etagere').length+1}`
+    : `Tiroir ${STATE.armoires[side].sections.filter(s=>s.type==='tiroir').length+1}`;
+  STATE.armoires[side].sections.push({ id: uid(), type, label, open: true, contenants: [] });
+  renderArmoire(side);
+  showToast(`${type==='etagere'?'Étagère':'Tiroir'} ajouté(e)`, 'info');
+}
+
+async function deleteSectionAsync(side, si) {
+  const ok = await mobileConfirm('Supprimer cette section et tout son contenu ?');
+  if (!ok) return;
+  STATE.armoires[side].sections.splice(si, 1);
+  renderArmoire(side);
+}
+
+function updateSectionLabel(e, side, si) {
+  STATE.armoires[side].sections[si].label = e.target.value;
+}
+
+// ============================================================
+//  ACTIONS — CONTENANTS
+// ============================================================
+function addContenant(side, si) {
+  const sec   = STATE.armoires[side].sections[si];
+  const label = sec.type === 'etagere'
+    ? `Caisse ${(sec.contenants||[]).length+1}`
+    : `Bac ${(sec.contenants||[]).length+1}`;
+  if (!sec.contenants) sec.contenants = [];
+  sec.contenants.push({ id: uid(), label, open: true, objets: [] });
+  renderArmoire(side);
+}
+
+async function deleteContenantAsync(side, si, ci) {
+  const ok = await mobileConfirm('Supprimer ce contenant ?');
+  if (!ok) return;
+  STATE.armoires[side].sections[si].contenants.splice(ci, 1);
+  renderArmoire(side);
+}
+
+function updateContenantLabel(e, side, si, ci) {
+  STATE.armoires[side].sections[si].contenants[ci].label = e.target.value;
+}
+
+// ============================================================
+//  ACTIONS — OBJETS
+// ============================================================
+function addObjet(side, si, ci) {
+  const contenants = STATE.armoires[side].sections[si].contenants;
+  if (!contenants[ci].objets) contenants[ci].objets = [];
+  contenants[ci].objets.push({ id: uid(), nom: '', quantite: 1, reference: '' });
+  renderArmoire(side);
+  setTimeout(() => {
+    const rows = document.querySelectorAll(`#sections${cap(side)} .objet-row`);
+    const last = rows[rows.length - 1];
+    if (last) last.querySelector('.objet-nom-input')?.focus();
+  }, 50);
+}
+
+function updateObjet(e, side, si, ci, oi, field) {
+  let val = e.target.value;
+  if (field === 'quantite') val = Math.max(0, parseInt(val)||0);
+  STATE.armoires[side].sections[si].contenants[ci].objets[oi][field] = val;
+  if (field === 'quantite') updateStats();
+}
+
+function changeQty(side, si, ci, oi, delta) {
+  const obj = STATE.armoires[side].sections[si].contenants[ci].objets[oi];
+  obj.quantite = Math.max(0, (obj.quantite||0) + delta);
+  renderArmoire(side);
+}
+
+async function deleteObjetAsync(side, si, ci, oi) {
+  const ok = await mobileConfirm('Supprimer cet objet ?');
+  if (!ok) return;
+  STATE.armoires[side].sections[si].contenants[ci].objets.splice(oi, 1);
+  renderArmoire(side);
+}
+
+function onArmLabelChange() {
+  STATE.armoires.gauche.label = document.getElementById('labelGauche').value;
+  STATE.armoires.droite.label = document.getElementById('labelDroite').value;
+  const lg = STATE.armoires.gauche.label;
+  const ld = STATE.armoires.droite.label;
+  document.getElementById('tabLabelGauche').textContent = lg.length > 10 ? lg.slice(0,10)+'…' : lg;
+  document.getElementById('tabLabelDroite').textContent = ld.length > 10 ? ld.slice(0,10)+'…' : ld;
+}
+
+// ============================================================
+//  STATS
+// ============================================================
+function updateStats() {
+  ['gauche','droite'].forEach(side => {
+    let total = 0;
+    (STATE.armoires[side].sections||[]).forEach(sec =>
+      (sec.contenants||[]).forEach(cont =>
+        (cont.objets||[]).forEach(obj => { total += (obj.quantite||0); })));
+    document.getElementById('stats' + cap(side)).textContent = total + ' obj.';
+    document.getElementById('tabStats' + cap(side)).textContent = total;
+  });
+}
+
+// ============================================================
+//  SAVE  →  appel fetch vers Apps Script
+// ============================================================
+function manualSave() {
+  clearTimeout(saveTimer);
+  doSave();
+}
+
+async function doSave() {
+  if (isSaving) { saveTimer = setTimeout(doSave, 800); return; }
+  if (!GAS_URL) {
+    showToast('⚠️ Configure d\'abord l\'URL Apps Script', 'error');
+    return;
+  }
+  isSaving = true;
+  setStatus('saving');
+
+  try {
+    const json = JSON.stringify(STATE);
+    const res  = await gasCall('saveData', { data: json });
+    isSaving   = false;
+    if (res && res.success) {
+      lastSaveTs = new Date().toISOString();
+      setStatus('saved');
+      showToast('✓ Exporté dans : ' + res.sheet, 'success');
+    } else {
+      setStatus('error');
+      showToast('Erreur sauvegarde : ' + (res?.error || '?'), 'error');
+    }
+  } catch(e) {
+    isSaving = false;
+    setStatus('error');
+    showToast('Erreur réseau : ' + e.message, 'error');
+  }
+}
+
+function setStatus(state) {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'status-dot ' + state;
+  const labels = {
+    saved  : lastSaveTs ? '✓ ' + formatTs(lastSaveTs) : '✓ Sauvegardé',
+    saving : '⟳ Sauvegarde…',
+    error  : '✗ Erreur',
+    init   : 'Init…'
+  };
+  text.textContent = labels[state] || state;
+}
+
+function formatTs(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ============================================================
+//  SEARCH
+// ============================================================
+function searchObjects(source) {
+  const inputId = source === 'mobile' ? 'searchInputMobile' : 'searchInputDesktop';
+  const boxId   = source === 'mobile' ? 'searchResults' : 'searchResultsDesktop';
+  const q = document.getElementById(inputId).value.trim().toLowerCase();
+  const box = document.getElementById(boxId);
+
+  if (q.length < 2) { box.style.display = 'none'; box.innerHTML = ''; return; }
+
+  let results = [];
+  ["gauche","droite"].forEach(side => {
+    const arm = STATE.armoires[side];
+    (arm.sections||[]).forEach(sec =>
+      (sec.contenants||[]).forEach(cont =>
+        (cont.objets||[]).forEach(obj => {
+          if (obj.nom.toLowerCase().includes(q) || (obj.reference||'').toLowerCase().includes(q)) {
+            results.push({ armoire: arm.label, section: sec.label, contenant: cont.label,
+                           nom: obj.nom, quantite: obj.quantite, reference: obj.reference||'' });
+          }
+        })));
+  });
+
+  if (results.length === 0) {
+    box.style.display = 'block';
+    box.innerHTML = `<div style="padding:0.75rem;color:var(--c-muted);font-size:0.82rem;">Aucun résultat</div>`;
+    return;
+  }
+
+  if (source === 'mobile') {
+    box.innerHTML = results.map(r => `
+      <div style="padding:0.75rem;border-bottom:1px solid var(--c-border)">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.2rem">${esc(r.nom)}</div>
+        <div style="font-size:0.75rem;color:var(--c-muted)">${esc(r.armoire)} › ${esc(r.section)} › ${esc(r.contenant)}</div>
+        <div style="display:flex;gap:1rem;margin-top:0.3rem">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--c-accent)">×${r.quantite}</span>
+          ${r.reference ? `<span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--c-muted)">${esc(r.reference)}</span>` : ''}
+        </div>
+      </div>`).join('');
+  } else {
+    let html = `<table style="width:100%;font-size:0.8rem;border-collapse:collapse">
+      <thead><tr style="background:var(--c-panel)">
+        <th style="padding:6px;border-bottom:1px solid var(--c-border)">Armoire</th>
+        <th style="padding:6px;border-bottom:1px solid var(--c-border)">Section</th>
+        <th style="padding:6px;border-bottom:1px solid var(--c-border)">Contenant</th>
+        <th style="padding:6px;border-bottom:1px solid var(--c-border)">Objet</th>
+        <th style="padding:6px;border-bottom:1px solid var(--c-border)">Qté</th>
+        <th style="padding:6px;border-bottom:1px solid var(--c-border)">Réf.</th>
+      </tr></thead><tbody>`;
+    results.forEach(r => {
+      html += `<tr style="border-bottom:1px solid var(--c-border)">
+        <td style="padding:6px">${esc(r.armoire)}</td>
+        <td style="padding:6px">${esc(r.section)}</td>
+        <td style="padding:6px">${esc(r.contenant)}</td>
+        <td style="padding:6px;font-weight:600">${esc(r.nom)}</td>
+        <td style="padding:6px;text-align:center">${r.quantite}</td>
+        <td style="padding:6px;font-family:'JetBrains Mono',monospace;color:var(--c-muted)">${esc(r.reference)}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    box.innerHTML = html;
+  }
+  box.style.display = 'block';
+}
+
+// ============================================================
+//  FICHE 5S
+// ============================================================
+function openFiche5S() {
+  const modal = document.getElementById('modal5S');
+  const fiche = document.getElementById('ficheContent');
+  const now   = new Date().toLocaleDateString('fr-FR', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+
+  let html = `
+    <h1>🗄️ Fiche 5S — Inventaire Armoire</h1>
+    <div class="fiche-sub">Générée le ${now} · ${STATE.meta?.title || 'Inventaire'}</div>`;
+
+  ['gauche','droite'].forEach(side => {
+    const arm   = STATE.armoires[side];
+    const secs  = arm.sections || [];
+    const color = side === 'gauche' ? '#2563eb' : '#7c3aed';
+
+    html += `<div class="fiche-arm-header" style="background:${color};color:#fff;border-radius:4px;margin-bottom:8px">
+      ${arm.label || cap(side)} — ${secs.length} section(s)
+    </div>`;
+
+    if (secs.length === 0) {
+      html += `<p style="font-size:0.75rem;color:#888;margin-bottom:1rem">Aucune section</p>`;
+      return;
+    }
+
+    html += `<table><thead><tr>
+      <th>Section</th><th>Contenant</th><th>Objet</th>
+      <th class="qty-cell">Qté</th><th class="ref-cell">Réf.</th>
+    </tr></thead><tbody>`;
+
+    secs.forEach(sec => {
+      (sec.contenants||[]).forEach(cont => {
+        const objets = cont.objets || [];
+        if (objets.length === 0) {
+          html += `<tr>
+            <td>${esc(sec.label)}</td><td>${esc(cont.label)}</td>
+            <td style="color:#9ca3af;font-style:italic">—</td>
+            <td class="qty-cell">—</td><td class="ref-cell">—</td>
+          </tr>`;
+        } else {
+          objets.forEach((obj, oi) => {
+            html += `<tr>
+              <td>${oi===0?esc(sec.label):''}</td>
+              <td>${oi===0?esc(cont.label):''}</td>
+              <td>${esc(obj.nom)||'<em style="color:#9ca3af">Sans nom</em>'}</td>
+              <td class="qty-cell" style="font-weight:700">${obj.quantite||0}</td>
+              <td class="ref-cell">${esc(obj.reference||'')}</td>
+            </tr>`;
+          });
+        }
+      });
+    });
+    html += `</tbody></table>`;
+  });
+
+  html += `
+    <div class="fiche-5s-checklist">
+      <h2>✅ Checklist Standards 5S</h2>
+      <div class="checklist-grid">
+        ${checklist5S().map(item => `
+          <div class="checklist-item">
+            <div class="check-box"></div>
+            <div>${item}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e5e7eb;display:flex;gap:0.75rem;justify-content:flex-end" class="no-print">
+      <button style="padding:0.6rem 1.2rem;background:#f59e0b;color:#000;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;font-size:0.85rem" onclick="window.print()">🖨️ Imprimer</button>
+      <button style="padding:0.6rem 1.2rem;background:#111;color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;font-size:0.85rem" onclick="closeFiche5S()">✕ Fermer</button>
+    </div>`;
+
+  fiche.innerHTML = html;
+  modal.classList.remove('hidden');
+}
+
+function checklist5S() {
+  return [
+    "<strong>Seiri (Trier)</strong> — Éliminer tout ce qui n'est pas nécessaire",
+    "<strong>Seiton (Ranger)</strong> — Chaque objet a une place définie et étiquetée",
+    "<strong>Seiso (Nettoyer)</strong> — Armoire propre, aucune poussière ni débris",
+    "<strong>Seiketsu (Standardiser)</strong> — Étiquettes visibles, rangement identique à chaque fois",
+    "<strong>Shitsuke (Maintenir)</strong> — Vérification hebdomadaire de l'état de l'armoire",
+    "<strong>Quantités mini/maxi</strong> — Niveaux de stock min/max définis et respectés",
+    "<strong>FIFO</strong> — Premiers entrés, premiers sortis appliqué systématiquement",
+    "<strong>Inventaire à jour</strong> — Mise à jour après chaque mouvement de stock"
+  ];
+}
+
+function closeFiche5S() {
+  document.getElementById('modal5S').classList.add('hidden');
+}
+document.getElementById('modal5S').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal5S')) closeFiche5S();
+});
+
+// ============================================================
+//  UTILS
+// ============================================================
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+function cap(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let toastTimer = null;
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast toast-${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
