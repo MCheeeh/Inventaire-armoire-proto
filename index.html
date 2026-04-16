@@ -318,27 +318,38 @@
 
   /* ── OBJET ── */
   .objet-row {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.5rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.1rem 0.4rem;
+    padding: 0.45rem 0.5rem;
     background: var(--c-surface);
     border: 1px solid var(--c-border);
     border-radius: 8px;
     margin-bottom: 0.4rem;
   }
 
+  /* Ligne 1 col 1 : nom */
   .objet-nom-input {
-    flex: 1; background: transparent; border: none; outline: none;
+    grid-column: 1; grid-row: 1;
+    background: transparent; border: none; outline: none;
     font-family: 'Syne', sans-serif; font-size: 0.875rem; color: var(--c-text);
-    min-width: 0;
+    min-width: 0; width: 100%;
     height: var(--tap-min);
   }
   .objet-nom-input::placeholder { color: var(--c-muted); }
 
+  /* Ligne 2 : qty + ref */
+  .objet-row-bottom {
+    grid-column: 1; grid-row: 2;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
   .objet-ref-input {
-    width: 70px; background: transparent; border: none; outline: none;
-    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
-    color: var(--c-muted); text-align: right;
-    height: var(--tap-min);
+    flex: 1; background: transparent; border: none; outline: none;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    color: var(--c-muted);
+    height: 28px; min-width: 0;
   }
   .objet-ref-input::placeholder { color: #334155; }
   .objet-ref-input:focus { color: var(--c-text); }
@@ -374,6 +385,8 @@
   .qty-value::-webkit-outer-spin-button { -webkit-appearance: none; }
 
   .objet-del-btn {
+    grid-column: 2; grid-row: 1 / 3;
+    align-self: center;
     width: 36px; height: 36px; flex-shrink: 0;
     border: none; background: transparent;
     color: var(--c-muted); font-size: 1rem; cursor: pointer;
@@ -880,27 +893,37 @@ async function initApp() {
 
 // ============================================================
 //  APPEL GOOGLE APPS SCRIPT via fetch
-//  - loadData  → GET  (petite requête, pas de problème de taille)
-//  - saveData  → POST text/plain (évite la limite de taille d'URL et
-//                le preflight CORS qui bloque les requêtes cross-origin)
+//
+//  Problème GAS : l'URL /exec redirige (302) vers l'URL réelle.
+//  Un POST qui suit cette redirection est converti en GET par le
+//  navigateur → doPost n'est jamais appelé → données perdues.
+//
+//  Solution : on mémorise l'URL finale (après redirection) lors
+//  du premier GET (loadData au démarrage), puis on POSTe
+//  directement à cette URL finale sans redirection.
 // ============================================================
+let _gasExecUrl = null; // URL finale (après redirection GAS)
+
 async function gasCall(action, payload) {
   if (!GAS_URL) throw new Error('URL Apps Script non configurée');
 
   if (action === 'saveData') {
-    // POST : le JSON complet dans le body, pas dans l'URL
-    const body = JSON.stringify({ action, data: payload.data });
-    const resp = await fetch(GAS_URL, {
+    // Si on n'a pas encore l'URL finale, faire un GET probe pour la récupérer
+    if (!_gasExecUrl) {
+      const probe = await fetch(GAS_URL + '?action=ping', { method: 'GET', redirect: 'follow' });
+      _gasExecUrl = probe.url; // URL réelle après redirection
+    }
+    // POST direct vers l'URL finale → pas de redirection, doPost est appelé
+    const resp = await fetch(_gasExecUrl, {
       method : 'POST',
-      redirect: 'follow',
       headers : { 'Content-Type': 'text/plain;charset=utf-8' },
-      body
+      body    : JSON.stringify({ action: 'saveData', data: payload.data })
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     return resp.json();
   }
 
-  // GET pour loadData et autres (petites requêtes)
+  // GET pour loadData (et autres petites requêtes)
   const url = new URL(GAS_URL);
   url.searchParams.set('action', action);
   if (payload && Object.keys(payload).length > 0) {
@@ -908,6 +931,8 @@ async function gasCall(action, payload) {
   }
   const resp = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
   if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  // On mémorise l'URL finale pour les futurs POST (évite un aller-retour)
+  if (action === 'loadData') _gasExecUrl = resp.url;
   return resp.json();
 }
 
@@ -1027,14 +1052,16 @@ function buildObjet(side, si, ci, obj, oi) {
     <input class="objet-nom-input" placeholder="Nom de l'objet…"
            value="${esc(obj.nom)}"
            onchange="updateObjet(event,'${side}',${si},${ci},${oi},'nom')" />
-    <div class="qty-control">
-      <button class="qty-btn" onclick="changeQty('${side}',${si},${ci},${oi},-1)">−</button>
-      <input class="qty-value" type="number" min="0" value="${obj.quantite||0}"
-             onchange="updateObjet(event,'${side}',${si},${ci},${oi},'quantite')" />
-      <button class="qty-btn" onclick="changeQty('${side}',${si},${ci},${oi},1)">+</button>
+    <div class="objet-row-bottom">
+      <div class="qty-control">
+        <button class="qty-btn" onclick="changeQty('${side}',${si},${ci},${oi},-1)">−</button>
+        <input class="qty-value" type="number" min="0" value="${obj.quantite||0}"
+               onchange="updateObjet(event,'${side}',${si},${ci},${oi},'quantite')" />
+        <button class="qty-btn" onclick="changeQty('${side}',${si},${ci},${oi},1)">+</button>
+      </div>
+      <input class="objet-ref-input" placeholder="Réf." value="${esc(obj.reference||'')}"
+             onchange="updateObjet(event,'${side}',${si},${ci},${oi},'reference')" />
     </div>
-    <input class="objet-ref-input" placeholder="Réf." value="${esc(obj.reference||'')}"
-           onchange="updateObjet(event,'${side}',${si},${ci},${oi},'reference')" />
     <button class="objet-del-btn no-print"
             onclick="deleteObjetAsync('${side}',${si},${ci},${oi})" title="Supprimer">✕</button>`;
   return row;
