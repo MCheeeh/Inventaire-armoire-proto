@@ -21,6 +21,20 @@
     --c-danger:   #ef4444;
     --tap-min:    44px;
   }
+    :root.light {
+    --c-bg:       #f5f5f7;
+    --c-surface:  #ffffff;
+    --c-panel:    #e9e9ef;
+    --c-border:   #c9c9d4;
+    --c-left:     #2563eb;
+    --c-right:    #7c3aed;
+    --c-accent:   #d97706;
+    --c-text:     #111;
+    --c-muted:    #555;
+    --c-success:  #059669;
+    --c-danger:   #dc2626;
+  }
+
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -654,6 +668,9 @@
       <input class="config-url-input" id="gasUrlInput"
              placeholder="https://script.google.com/macros/s/…/exec" />
       <button class="btn-config-save" onclick="saveGasUrl()">Enregistrer</button>
+    </div>
+    <div style="margin-top:0.8rem">
+  ²  <button class="btn-config-save" onclick="toggleTheme()">Basculer thème</button>
     </div>
   </div>
 </div>
@@ -1414,6 +1431,25 @@ function showToast(msg, type='info') {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+const LS_THEME_KEY = "theme_mode";
+
+function applyTheme() {
+  const mode = localStorage.getItem(LS_THEME_KEY) || "dark";
+  document.documentElement.classList.toggle("light", mode === "light");
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem(LS_THEME_KEY) || "dark";
+  const next = current === "dark" ? "light" : "dark";
+  localStorage.setItem(LS_THEME_KEY, next);
+  applyTheme();
+  showToast("Thème : " + (next === "light" ? "Clair" : "Sombre"), "info");
+}
+
+applyTheme();
+
+  
 </script>
 </body>
 </html>
